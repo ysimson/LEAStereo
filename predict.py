@@ -10,6 +10,7 @@ import sys
 import shutil
 import os
 import torch
+from collections import OrderedDict
 import torch.nn as nn
 import torch.nn.parallel
 import torch.backends.cudnn as cudnn
@@ -55,7 +56,12 @@ if opt.resume:
     if os.path.isfile(opt.resume):
         print("=> loading checkpoint '{}'".format(opt.resume))
         checkpoint = torch.load(opt.resume)
-        model.load_state_dict(checkpoint['state_dict'], strict=True)      
+        # model_state_dict = OrderedDict()
+        # for k, v in checkpoint['state_dict'].items():
+        #     name = k[7:]  # remove `module.`
+        #     model_state_dict[name] = v
+        model_state_dict = checkpoint['state_dict']
+        model.load_state_dict(model_state_dict, strict=True)
     else:
         print("=> no checkpoint found at '{}'".format(opt.resume))
 
@@ -80,8 +86,8 @@ def RGBToPyCmap(rgbdata):
 
     return mpl_data
 
-mpl_data = RGBToPyCmap(turbo_colormap_data)
-plt.register_cmap(name='turbo', data=mpl_data, lut=turbo_colormap_data.shape[0])
+# mpl_data = RGBToPyCmap(turbo_colormap_data)
+# plt.register_cmap(name='turbo', cmap=turbo_colormap_data.shape[0])
 
 def readPFM(file): 
     with open(file, "rb") as f:

@@ -21,10 +21,11 @@ conda activate leastereo
 ```
 The code has been tested with PyTorch 1.6 and Cuda 10.2.
 ```shell
-conda install pytorch=1.6.0 torchvision=0.7.0 cudatoolkit=10.2 -c pytorch
+conda install pytorch=1.8.0 torchvision cudatoolkit -c pytorch
 conda install matplotlib path.py tqdm
 conda install tensorboard tensorboardX
 conda install scipy scikit-image opencv
+conda install nvidia-apex
 ```
 
 Install Nvidia Apex

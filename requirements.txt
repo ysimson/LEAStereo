@@ -1,0 +1,12 @@
+torchvision
+torchaudio
+scipy
+pyyaml
+tensorboardX
+matplotlib
+pandas
+tensorboard
+tqdm
+scikit-image
+opencv-python
+path
