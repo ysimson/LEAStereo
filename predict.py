@@ -293,6 +293,7 @@ def test_realsense(model, leftname, rightname, savename):
     print(torch.cuda.memory_summary())
     del input1, input2, prediction
     gc.collect()
+    torch.cuda.empty_cache()
     print(torch.cuda.memory_summary())
     temp = np.flipud(temp)
 
