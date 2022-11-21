@@ -4,6 +4,7 @@ import skimage
 import skimage.io
 import skimage.transform
 from PIL import Image
+import gc
 from math import log10
 
 import sys
@@ -30,42 +31,6 @@ import numpy as np
 import pdb
 from path import Path
 
-opt = obtain_predict_args()
-print(opt)
-
-torch.backends.cudnn.benchmark = True
-
-cuda = opt.cuda
-if cuda and not torch.cuda.is_available():
-    raise Exception("No GPU found, please run without --cuda")
-
-print('===> Building LEAStereo model')
-model = LEAStereo(opt)
-
-print('Total Params = %.2fMB' % count_parameters_in_MB(model))
-print('Feature Net Params = %.2fMB' % count_parameters_in_MB(model.feature))
-print('Matching Net Params = %.2fMB' % count_parameters_in_MB(model.matching))
-
-mult_adds = comp_multadds(model, input_size=(3, opt.crop_height, opt.crop_width))  # (3,192, 192))
-print("compute_average_flops_cost = %.2fMB" % mult_adds)
-
-if cuda:
-    model = torch.nn.DataParallel(model).cuda()
-
-if opt.resume:
-    if os.path.isfile(opt.resume):
-        print("=> loading checkpoint '{}'".format(opt.resume))
-        checkpoint = torch.load(opt.resume)
-        # model_state_dict = OrderedDict()
-        # for k, v in checkpoint['state_dict'].items():
-        #     name = k[7:]  # remove `module.`
-        #     model_state_dict[name] = v
-        model_state_dict = checkpoint['state_dict']
-        model.load_state_dict(model_state_dict, strict=True)
-    else:
-        print("=> no checkpoint found at '{}'".format(opt.resume))
-
-turbo_colormap_data = get_color_map()
 
 
 def RGBToPyCmap(rgbdata):
@@ -302,7 +267,7 @@ def test(leftname, rightname, savename):
     temp = np.flipud(temp)
 
 
-def test_realsense(leftname, rightname, savename):
+def test_realsense(model, leftname, rightname, savename):
     input1, input2, height, width = test_transform(load_data(leftname, rightname), opt.crop_height, opt.crop_width)
 
     input1 = Variable(input1, requires_grad=False)
@@ -325,6 +290,10 @@ def test_realsense(leftname, rightname, savename):
 
     plot_disparity(savename, temp, 192)
     savename_pfm = savename.replace('png', 'pfm')
+    print(torch.cuda.memory_summary())
+    del input1, input2, prediction
+    gc.collect()
+    print(torch.cuda.memory_summary())
     temp = np.flipud(temp)
 
 
@@ -333,6 +302,47 @@ def plot_disparity(savename, data, max_disp):
 
 
 if __name__ == "__main__":
+    opt = obtain_predict_args()
+    print(opt)
+
+    torch.backends.cudnn.benchmark = True
+
+    cuda = opt.cuda
+    if cuda and not torch.cuda.is_available():
+        raise Exception("No GPU found, please run without --cuda")
+
+    print('===> Building LEAStereo model')
+    model = LEAStereo(opt)
+
+    print('Total Params = %.2fMB' % count_parameters_in_MB(model))
+    print('Feature Net Params = %.2fMB' % count_parameters_in_MB(model.feature))
+    print('Matching Net Params = %.2fMB' % count_parameters_in_MB(model.matching))
+
+    mult_adds = comp_multadds(model, input_size=(3, opt.crop_height, opt.crop_width))  # (3,192, 192))
+    print("compute_average_flops_cost = %.2fMB" % mult_adds)
+
+    if cuda:
+        model = torch.nn.DataParallel(model).cuda()
+
+    if opt.resume:
+        if os.path.isfile(opt.resume):
+            print("=> loading checkpoint '{}'".format(opt.resume))
+            checkpoint = torch.load(opt.resume)
+            if cuda:
+                model_state_dict = checkpoint['state_dict']
+            else:
+                model_state_dict = OrderedDict()
+                for k, v in checkpoint['state_dict'].items():
+                    name = k[7:]  # remove `module.`
+                    model_state_dict[name] = v
+                model.cpu()
+
+            model.load_state_dict(model_state_dict, strict=True)
+        else:
+            print("=> no checkpoint found at '{}'".format(opt.resume))
+
+    turbo_colormap_data = get_color_map()
+
     file_path = opt.data_path
     file_list = opt.test_list
     f = open(file_list, 'r')
@@ -349,7 +359,7 @@ if __name__ == "__main__":
 
             fn = os.path.splitext(os.path.basename(current_file))[0]
             savename = opt.save_path + "{}.png".format(fn)
-            test_realsense(leftname, rightname, savename)
+            test_realsense(model, leftname, rightname, savename)
 
         if opt.kitti2015:
             leftname = file_path + 'image_2/' + current_file[0: len(current_file) - 1]
