@@ -9,6 +9,7 @@ def obtain_predict_args():
     parser.add_argument('--resume', type=str, default='', help="resume from saved model")
     parser.add_argument('--cuda', type=bool, default=True, help='use cuda?')
     parser.add_argument('--sceneflow', type=int, default=0, help='sceneflow dataset? Default=False')
+    parser.add_argument('--realsense', type=int, default=0, help='Realsense inputs? Default=False')
     parser.add_argument('--kitti2012', type=int, default=0, help='kitti 2012? Default=False')
     parser.add_argument('--kitti2015', type=int, default=0, help='kitti 2015? Default=False')
     parser.add_argument('--middlebury', type=int, default=0, help='Middlebury? Default=False')

@@ -9,6 +9,8 @@ class Path(object):
             return './dataset/kitti2012/training/'
         elif dataset == 'middlebury':
             return './dataset/MiddEval3/trainingH/'
+        elif dataset == 'realsense':
+            return './dataset/realsense_images/'
         else:
             print('Dataset {} not available.'.format(dataset))
             raise NotImplementedError
