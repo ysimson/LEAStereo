@@ -212,7 +212,7 @@ def test_realsense(model, leftname, rightname, savename):
 
     plot_disparity(savename, temp, 192)
     savename_pfm = savename.replace('png', 'pfm')
-    save_pfm(savename_pfm, prediction)
+    save_pfm(savename_pfm, temp)
     del input1, input2, prediction
     gc.collect()
     torch.cuda.empty_cache()
@@ -281,7 +281,7 @@ if __name__ == "__main__":
             print("=> no checkpoint found at '{}'".format(opt.resume))
 
     turbo_colormap_data = get_color_map()
-
+    os.makedirs(opt.save_path, exist_ok=True)
     file_path = opt.data_path
     file_list = opt.test_list
     f = open(file_list, 'r')
